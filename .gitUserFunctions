@@ -1,0 +1,142 @@
+
+
+cleanup_users() {
+  # Loop through savedGitUsers, get all names, use regex to delete the ssh keys and pub,
+  # Use regex to check config file and delete rows below or something
+  source ~/.savedGitUsers
+  if  [[ -v arr[@] ]]; then
+  # Creates a regex of list of words (account names) to NOT match, meaning all the accounts no longer in gituser files will match (if automatically added) and then will be removed.
+  # ?! - If matches, DO NOT match regex
+  # \\b an escaped \b for regex white space / end of word to ensure exact match of account name
+
+  printf -v fileNames '%s|' "${!arr[@]}"
+  matchedFileNames="${fileNames%|}"
+  # ls | grep -P "$fileNames" | xargs -i rm -f "~/.ssh/{}"
+  # echo '^id_\(\('"${matchedFileNames}"'\(.pub\)*$\)'
+  # ls ~/.ssh | grep -v -E '^id_(('"${matchedFileNames}"')(.pub)*$)'
+  # echo $matchedFileNames
+  # List all files in ~/.ssh, then filter to only ones beginnging with id_ then filter to ones NOT inside the savedGitUsers file.
+  # echo '^id_(('"${matchedFileNames}"')(.pub)*$)'
+  filesToRemove=$(ls ~/.ssh | grep -E '^id_' | grep -v -E '^id_(('"${matchedFileNames}"')(.pub)*$)') 
+  echo Removing SSH Files: $filesToRemove
+
+  # Move to .shh file, remove files, move back to prev dir
+  cd ~/.ssh
+  rm $filesToRemove
+  cd -
+
+  printf -v joined '(?!.*\\b%s\\b)' "${!arr[@]}"
+  match=${joined%}
+  # .* matches all characters after the account name match,
+  # [^#] do not match # means the regex stops matching on the next '# Account for' because # is excluded. (Can be 0 or 1 really because end of file)
+  configRegex='(# Account for:'"${match}"' .*[^#]*)'
+
+#### Resorted to perl as sed and pure bash wasnt allowing or working with full regex expression or multi-line files gulped all at once.
+# -pi.back saves the original file before editing with .back extension
+# -0pe, 0 forces perl to gulp the whole file at once, p takes a file path, e enables advanced regex
+# s/pattern/replacement/flags file
+# s is substitution, pattern is regex, replacement is a new line \n and flags are global / multi-line
+
+perl -pi.back -0pe 's/'"${configRegex}"'/\n/mg' ~/.ssh/config
+
+# Have a delete user function that uses select to choose user to delete, or multiple which removes from gitusers files and then calls this after all removed to reduce loops.
+
+# Need to also delete ssh files
+  fi
+}
+
+delete_git_user() {
+  source ~/.savedGitUsers
+if  [[ -v arr[@] ]]
+then
+select user in ${!arr[@]}
+do
+  echo "Removed: $user"
+  unset arr[$user]
+  declare -p arr > ~/.savedGitUsers
+  break;
+done
+while true; do
+    read -p "Do you want to DELETE another user? [Yn]" yn
+    case $yn in
+        [Nn]* ) break;;
+        * ) delete_git_user; break;;
+    esac
+done
+else
+  echo "No saved git users to choose from"
+fi
+# Delete leftover files after deleting users.
+cleanup_users
+}
+
+
+add_git_user() {
+  source ~/.savedGitUsers
+  [[ -v arr[@] ]] && echo "Add a new git user:"
+  read -p "Enter the git user NAME: " name
+  read -p "Enter the git user EMAIL: " email
+  # Add new user to the array then save it back to savedGitUsers
+  arr["$name"]=$email
+  declare -p arr > ~/.savedGitUsers
+
+  echo "Generating ssh keys for $name"
+  eval `ssh-agent -s`
+  idPath=~/.ssh/id_$name
+  # generate ssh keys with email and no passphrase in the .ssh files with id_name
+  ssh-keygen -q -t ed25519 -C "$email" -f $idPath -N ""
+  # Add the private key to the ssh agent
+  ssh-add $idPath
+
+  echo "Add the below public key to https://github.com/settings/keys - or find it at $idPath.pub "
+  # Print the public key to the console
+  ssh-keygen -y -f $idPath
+
+  # Append code to ssh config with newlines between each part.
+  printf "\n%s\n%s\n%s\n%s\n%s\n\n" "# Account for: $name - $email" "Host github-$name" "HostName github.com" "User git" "IdentityFile $idPath" >> ~/.ssh/config
+  
+}
+
+select_git_user() {
+source ~/.savedGitUsers
+if  [[ -v arr[@] ]]
+echo ${!arr[@]} ${arr[@]}
+then
+global=""
+while true; do
+    read -p "Do you want to set globally?" yn
+    case $yn in
+        [Yy]* ) global="--global"; break;;
+        [Nn]* ) break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+select user in ${!arr[@]}
+do
+  echo "You have chosen $user ${$global && "globally"}"
+  git config user.name "$user"
+  git config user.email "${arr[$user]}"
+  exit;
+done
+else
+  echo "No saved git users to choose from"
+fi
+}
+
+init_git_users() {
+mkdir -p ~/.ssh
+
+declare -A arr
+add_git_user
+while true; do
+    read -p "Do you want to add another user?" yn
+    case $yn in
+        [Yy]* ) add_git_user; break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+declare -p arr > ~/.savedGitUsers
+echo Added: ${!arr[@]}
+}
