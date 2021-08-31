@@ -1,8 +1,12 @@
-
+#!/bin/bash
 
 cleanup_users() {
   # Loop through savedGitUsers, get all names, use regex to delete the ssh keys and pub,
   # Use regex to check config file and delete rows below or something
+  if  [[ ! -f ~/.savedGitUsers ]]; then
+    echo "No saved git users; Use setgituser to add some. Exiting..."
+    exit;
+  fi
   source ~/.savedGitUsers
   if  [[ -v arr[@] ]]; then
   # Creates a regex of list of words (account names) to NOT match, meaning all the accounts no longer in gituser files will match (if automatically added) and then will be removed.
@@ -46,6 +50,10 @@ perl -pi.back -0pe 's/'"${configRegex}"'/\n/mg' ~/.ssh/config
 }
 
 delete_git_user() {
+    if  [[ ! -f ~/.savedGitUsers ]]; then
+    echo "No saved git users; Use setgituser to add some. Exiting..."
+    exit;
+  fi
   source ~/.savedGitUsers
 if  [[ -v arr[@] ]]
 then
@@ -72,8 +80,16 @@ cleanup_users
 
 
 add_git_user() {
-  source ~/.savedGitUsers
-  [[ -v arr[@] ]] && echo "Add a new git user:"
+  if  [[ -f ~/.savedGitUsers ]] then;
+    source ~/.savedGitUsers
+  fi
+  if [[ -v arr[@] ]] then;
+  echo "Add another git user:"
+  else
+  declare -A arr
+  echo "Add a git user:"
+  fi
+
   read -p "Enter the git user NAME: " name
   read -p "Enter the git user EMAIL: " email
   # Add new user to the array then save it back to savedGitUsers
@@ -95,9 +111,21 @@ add_git_user() {
   # Append code to ssh config with newlines between each part.
   printf "\n%s\n%s\n%s\n%s\n%s\n\n" "# Account for: $name - $email" "Host github-$name" "HostName github.com" "User git" "IdentityFile $idPath" >> ~/.ssh/config
   
+  while true; do
+    read -p "Do you want to add another user?" yn
+    case $yn in
+        [Yy]* ) add_git_user; break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
 }
 
 select_git_user() {
+if  [[ ! -f ~/.savedGitUsers ]]; then
+    echo "No saved git users; Use setgituser to add some. Exiting..."
+    exit
+fi
 source ~/.savedGitUsers
 if  [[ -v arr[@] ]]
 echo ${!arr[@]} ${arr[@]}
@@ -124,19 +152,12 @@ fi
 }
 
 init_git_users() {
+echo "initialising git users"
 mkdir -p ~/.ssh
 
 declare -A arr
 add_git_user
-while true; do
-    read -p "Do you want to add another user?" yn
-    case $yn in
-        [Yy]* ) add_git_user; break;;
-        [Nn]* ) exit;;
-        * ) echo "Please answer yes or no.";;
-    esac
-done
 
-declare -p arr > ~/.savedGitUsers
+# declare -p arr > ~/.savedGitUsers
 echo Added: ${!arr[@]}
 }

@@ -1,5 +1,3 @@
-source ~
-
 if [ -f ~/.gitUserFunctions ]; then
     \. ~/.gitUserFunctions
     elif [ -f ~/.dotfiles/.gitUserFunctions ]; then
@@ -9,6 +7,9 @@ if [ -f ~/.bash_aliases ]; then
     \. ~/.bash_aliases
 fi
 
+if [[ ! -d ~/.ssh ]] then;
+mkdir -p ~/.ssh
+fi
 ### Set SSH Keys on startup
 shopt -s extglob
 # rm -rf ~/.ssh/agent.env

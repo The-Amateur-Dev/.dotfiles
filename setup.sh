@@ -1,3 +1,4 @@
+#!/bin/bash
 ##### BEFORE HOLIDAY - Testing pinning apps to taskbar, mainly windows terminal issue, check the if statements, check if can fix the version
 
 
@@ -242,6 +243,7 @@ main() {
    setup_devtools
    setup_dotfiles
    pin_to_taskbar
+   init_git_users
 }
 
 main
