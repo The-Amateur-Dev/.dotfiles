@@ -16,3 +16,4 @@ alias gp="git push"
 alias gl="git log"
 alias gco="git checkout"
 alias gs="git status"
+#alias for git undo last commit

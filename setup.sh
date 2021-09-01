@@ -197,10 +197,12 @@ center "Terminal: Symlinking Windows Terminal Settings" "$MAGENTA" "$MAGENTA"
  if [ -d "$LOCALAPPDATA/Packages" ]; then
 for f in $TermianlFiles
 do
-    if [ -d "$LOCALAPPDATA/Packages/$f/LocalState"]
+    if [ -d "$LOCALAPPDATA/Packages/$f/LocalState" ]; then
         ln -sf ~/.dotfiles/windows-terminal-settings.jsonc $LOCALAPPDATA/Packages/$f/LocalState/settings.json
     fi
 done
+fi
+
 }
 
 ### Pin apps to taskbar and unpin edge. (Not sure how to unpin Windows Apps Store)
@@ -248,7 +250,7 @@ main() {
    setup_devtools
    setup_dotfiles
    pin_to_taskbar
-   source ~/.dotfiles/gitUserFunctions
+   source ~/.dotfiles/.gitUserFunctions
    init_git_users
 }
 

@@ -5,7 +5,7 @@ cleanup_users() {
   # Use regex to check config file and delete rows below or something
   if  [[ ! -f ~/.savedGitUsers ]]; then
     echo "No saved git users; Use setgituser to add some. Exiting..."
-    exit;
+    return 1;
   fi
   source ~/.savedGitUsers
   if  [[ -v arr[@] ]]; then
@@ -52,7 +52,7 @@ perl -pi.back -0pe 's/'"${configRegex}"'/\n/mg' ~/.ssh/config
 delete_git_user() {
     if  [[ ! -f ~/.savedGitUsers ]]; then
     echo "No saved git users; Use setgituser to add some. Exiting..."
-    exit;
+    return 1;
   fi
   source ~/.savedGitUsers
 if  [[ -v arr[@] ]]
@@ -115,7 +115,7 @@ add_git_user() {
     read -p "Do you want to add another user?" yn
     case $yn in
         [Yy]* ) add_git_user; break;;
-        [Nn]* ) exit;;
+        [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
 done
@@ -124,7 +124,7 @@ done
 select_git_user() {
 if  [[ ! -f ~/.savedGitUsers ]]; then
     echo "No saved git users; Use setgituser to add some. Exiting..."
-    exit
+    return 1
 fi
 source ~/.savedGitUsers
 if  [[ -v arr[@] ]]
@@ -141,10 +141,10 @@ while true; do
 done
 select user in ${!arr[@]}
 do
-  echo "You have chosen $user ${$global && "globally"}"
+  echo "You have chosen $user"
   git config user.name "$user"
   git config user.email "${arr[$user]}"
-  exit;
+  return 1;
 done
 else
   echo "No saved git users to choose from"
