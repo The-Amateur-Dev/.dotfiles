@@ -7,7 +7,7 @@ if [ -f ~/.bash_aliases ]; then
     \. ~/.bash_aliases
 fi
 
-if [[ ! -d ~/.ssh ]] then;
+if [[ ! -d ~/.ssh ]]; then
 mkdir -p ~/.ssh
 fi
 ### Set SSH Keys on startup
@@ -75,7 +75,7 @@ parse_git_username() {
 # }
 # check_is_git() {
 #     GIT=git rev-parse --git-dir 2> /dev/null
-#   if [ GIT != ".git" ];then
+#   if [ GIT != ".git" ]; then
 #   echo "BRANCH \e[0;32m($(parse_git_branch))\e[m | USER \e[0;34m($(parse_git_user))\e[m"
 #   else
 #   ""

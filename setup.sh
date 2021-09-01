@@ -92,13 +92,16 @@ center "Terminal: Installing Windows Terminal" "$MAGENTA" "$MAGENTA"
 # ## Install Windows Terminal
  choco install microsoft-windows-terminal -fy
 
-center "Terminal: Symlinking Windows Terminal Settings" "$MAGENTA" "$MAGENTA"
-# ## Add a symlink for Windows Terminal settings.
- if [ -d "$LOCALAPPDATA/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe" ]; then
- ln -sf ~/.dotfiles/windows-terminal-settings.json $LOCALAPPDATA/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json
-    else
- ln -sf ~/.dotfiles/windows-terminal-settings.json $LOCALAPPDATA/Packages/Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe/LocalState/settings.json
-    fi
+# center "Terminal: Symlinking Windows Terminal Settings" "$MAGENTA" "$MAGENTA"
+# # ## Add a symlink for Windows Terminal settings.
+#     TermianlFiles=$(ls "$LOCALAPPDATA/Packages" | grep "^Microsoft\.WindowsTerminal")
+#  if [ -d "$LOCALAPPDATA/Packages" ]; then
+# for f in $TermianlFiles
+# do
+#     if [ -d "$LOCALAPPDATA/Packages/$f/LocalState"]
+#         ln -sf ~/.dotfiles/windows-terminal-settings.jsonc $LOCALAPPDATA/Packages/$f/LocalState/settings.json
+#     fi
+# done
 }
 
 download_packages() {
@@ -184,18 +187,20 @@ done
 #  ln -sf ~/.dotfiles/.inputrc ~/.inputrc
 # center "Linking .gitconfig" "$GREEN"
 #  ln -sf ~/.dotfiles/.gitconfig ~/.gitconfig
-center "Linking .vscode" "$GREEN"
- ln -sf ~/.dotfiles/.vscode $(pwd)/.vscode
 center "Linking VSCode settings.json" "$GREEN"
-if [ -d "$APPDATA/Code" ]; then
-    if [ -d "'$APPDATA/Code/User" ]; then
-        ln -sf ~/.dotfiles/.vscode/settings.json $APPDATA/Code/User/settings.json
+mkdir -p $APPDATA/Code
+ln -sf ~/.dotfiles/.vscode/settings.json $APPDATA/Code/User
+
+center "Terminal: Symlinking Windows Terminal Settings" "$MAGENTA" "$MAGENTA"
+# ## Add a symlink for Windows Terminal settings.
+    TermianlFiles=$(ls "$LOCALAPPDATA/Packages" | grep "^Microsoft\.WindowsTerminal")
+ if [ -d "$LOCALAPPDATA/Packages" ]; then
+for f in $TermianlFiles
+do
+    if [ -d "$LOCALAPPDATA/Packages/$f/LocalState"]
+        ln -sf ~/.dotfiles/windows-terminal-settings.jsonc $LOCALAPPDATA/Packages/$f/LocalState/settings.json
     fi
-else
-mkdir $APPDATA/Code
-mkdir $APPDATA/Code/User
-ln -sf ~/.dotfiles/.vscode/settings.json $APPDATA/Code/User/settings.json
-fi
+done
 }
 
 ### Pin apps to taskbar and unpin edge. (Not sure how to unpin Windows Apps Store)
@@ -218,8 +223,8 @@ pin_to_taskbar(){
      center "Pinning Windows Terminal Preview" "$MAGENTA"
      powershell -noprofile -ExecutionPolicy Bypass -file ~/.dotfiles/PinToTaskBar.ps1 "C:\Program Files\WindowsApps\Microsoft.WindowsTerminalPreview_1.9.1445.0_x64__8wekyb3d8bbwe\wt.exe" PIN
     else
-     center "Pinning Windows Terminal v1.8" "$MAGENTA"
-     powershell -noprofile -ExecutionPolicy Bypass -file ~/.dotfiles/PinToTaskBar.ps1 "C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.8.1444.0_x64__8wekyb3d8bbwe\wt.exe" PIN
+     center "Pinning Windows Terminal" "$MAGENTA"
+     powershell -noprofile -ExecutionPolicy Bypass -file ~/.dotfiles/PinToTaskBar.ps1 "%LOCALAPPDATA%\Microsoft\WindowsApps\wt.exe" PIN
     fi
 
     center "Un-Pinning MS Edge" "$MAGENTA"
@@ -243,6 +248,7 @@ main() {
    setup_devtools
    setup_dotfiles
    pin_to_taskbar
+   source ~/.dotfiles/gitUserFunctions
    init_git_users
 }
 

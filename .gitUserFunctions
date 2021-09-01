@@ -80,10 +80,10 @@ cleanup_users
 
 
 add_git_user() {
-  if  [[ -f ~/.savedGitUsers ]] then;
+  if  [[ -f ~/.savedGitUsers ]]; then
     source ~/.savedGitUsers
   fi
-  if [[ -v arr[@] ]] then;
+  if [[ -v arr[@] ]]; then
   echo "Add another git user:"
   else
   declare -A arr

@@ -39,7 +39,7 @@
       "fontFace": "Cascadia Code",
       "fontSize": 14,
       // "background": "#3330008e",
-      "closeOnExit": true
+      "closeOnExit": false
     },
     "list": [
       {
