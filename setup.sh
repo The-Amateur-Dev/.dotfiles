@@ -239,7 +239,7 @@ main() {
    default_windows_settings
    #Choco needs terminal restart, if installed assume done first steps
    command_exists choco || download_chocolatey
-
+   bash
    command_exists choco || {
         error "Choco command not available, restart terminal and run setup again."
         exit 1

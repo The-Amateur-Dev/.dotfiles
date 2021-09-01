@@ -78,7 +78,7 @@ fi
 cleanup_users
 }
 
-
+## TODO: Make version control agnostic, gitlab azure github etc
 add_git_user() {
   if  [[ -f ~/.savedGitUsers ]]; then
     source ~/.savedGitUsers
@@ -115,10 +115,11 @@ add_git_user() {
     read -p "Do you want to add another user?" yn
     case $yn in
         [Yy]* ) add_git_user; break;;
-        [Nn]* ) break;;
+        [Nn]* ) return 1;;
         * ) echo "Please answer yes or no.";;
     esac
 done
+return 1
 }
 
 select_git_user() {
