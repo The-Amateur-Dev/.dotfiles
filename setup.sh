@@ -71,7 +71,7 @@ download_chocolatey() {
 center "Running Chocolatey Install" "$BLUE" "$BLUE"
 # ### Chocolatey install
  powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))" && SET PATH=%PATH%;%ALLUSERSPROFILE%/chocolatey/bin
-# powershell.exe -noprofile -executionpolicy bypass -file ~/.dotfiles/restart.ps1
+ powershell.exe -noprofile -executionpolicy bypass -file ~/.dotfiles/restart.ps1
 }
 
 download_fonts() {
@@ -199,7 +199,7 @@ main() {
    #Choco needs terminal restart, if installed assume done first steps
    command_exists choco || download_chocolatey
    command_exists choco || {
-        error "Choco command not available, restart terminal and run setup again."
+        error "Choco command not available, restart terminal and run setup again. OR run runThis.bat inside Install-Choco directory for a local install."
         return 1
     }
    download_fonts   
