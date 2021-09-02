@@ -1,0 +1,42 @@
+source ~/.dotfiles/.gitUserFunctions
+
+setup_dotfiles(){
+center "Dotfile: Symlinking settings" "$GREEN"
+# ## Symlink dot files.
+
+FILES=$(ls -A ~/.dotfiles | grep "^\.")
+for f in $FILES
+do
+  echo "Processing $f file..."
+  center "Linking $f" "$GREEN"
+  ln -sf ~/.dotfiles/$f "$HOME" 
+  # take action on each file. $f store current file name
+#   cat "$f"
+done
+# center "Linking .bash_aliases" "$GREEN"
+# ln -sf ~/.dotfiles/.bash_aliases ~/.bash_aliases 
+# center "Linking .bashrc" "$GREEN"
+# ln -sf ~/.dotfiles/.bashrc ~/.bashrc 
+# center "Linking .bash_profile" "$GREEN"
+#  ln -sf ~/.dotfiles/.bash_profile ~/.bash_profile
+# center "Linking .inputrc" "$GREEN"
+#  ln -sf ~/.dotfiles/.inputrc ~/.inputrc
+# center "Linking .gitconfig" "$GREEN"
+#  ln -sf ~/.dotfiles/.gitconfig ~/.gitconfig
+center "Linking VSCode settings.json" "$GREEN"
+mkdir -p $APPDATA/Code
+ln -sf ~/.dotfiles/.vscode/settings.json $APPDATA/Code/User
+
+center "Terminal: Symlinking Windows Terminal Settings" "$MAGENTA" "$MAGENTA"
+# ## Add a symlink for Windows Terminal settings.
+    TermianlFiles=$(ls "$LOCALAPPDATA/Packages" | grep "^Microsoft\.WindowsTerminal")
+ if [ -d "$LOCALAPPDATA/Packages" ]; then
+for f in $TermianlFiles
+do
+    if [ -d "$LOCALAPPDATA/Packages/$f/LocalState" ]; then
+        ln -sf ~/.dotfiles/windows-terminal-settings.jsonc $LOCALAPPDATA/Packages/$f/LocalState/settings.json
+    fi
+done
+fi
+
+}

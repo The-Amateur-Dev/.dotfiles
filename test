@@ -5,4 +5,18 @@ do
   echo $(PWD)
   # take action on each file. $f store current file name
 #   cat "$f"
+  declare -A repoOptions
+  repoOptions[github]="github.com"
+  repoOptions[gitlab]="gitlab.com"
+  repoOptions[azure]="ssh.dev.azure.com"
+  encryptionOptions=(rsa dsa ecdsa ed25519)
+
+  # echo "Choose the SSH Encryption type:"
+
+  # select encryption in ${encryptionOptions[@]}
+
+  echo ${repoOptions[*]}
+  select encryption in ${encryptionOptions[@]}
+do
+echo $encryption
 done

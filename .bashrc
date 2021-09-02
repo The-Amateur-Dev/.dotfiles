@@ -1,7 +1,5 @@
-if [ -f ~/.gitUserFunctions ]; then
-    \. ~/.gitUserFunctions
-    elif [ -f ~/.dotfiles/.gitUserFunctions ]; then
-    \. ~/.dotfiles/.gitUserFunctions
+if [ -f ~/.dotfiles/exported ]; then
+    \. ~/.dotfiles/exported
 fi
 if [ -f ~/.bash_aliases ]; then
     \. ~/.bash_aliases

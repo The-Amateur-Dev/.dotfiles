@@ -89,28 +89,46 @@ add_git_user() {
   declare -A arr
   echo "Add a git user:"
   fi
+  declare -A repoOptions
+  repoOptions[github]="github.com"
+  repoOptions[gitlab]="gitlab.com"
+  repoOptions[azure]="ssh.dev.azure.com"
 
+
+  encryptionOptions=(rsa dsa ecdsa ed25519)
+  echo "Choose the SSH Encryption type:"
+  select encryption in ${encryptionOptions[@]}
+do
+  echo "Choose the Repository site"
+select repo in ${!repoOptions[@]}
+do
   read -p "Enter the git user NAME: " name
   read -p "Enter the git user EMAIL: " email
   # Add new user to the array then save it back to savedGitUsers
-  arr["$name"]=$email
+  uniqueName="$repo-$name"
+  arr[$uniqueName]=$email
   declare -p arr > ~/.savedGitUsers
+  declare -A cloneOptions
+  cloneOptions[github]="git@$uniqueName:githubUserNameHere/project"
+  cloneOptions[gitlab]="gitlab.com"
+  cloneOptions[azure]="git@$uniqueName:v3/project"
 
-  echo "Generating ssh keys for $name"
+  echo "Generating ssh keys for $uniqueName"
   eval `ssh-agent -s`
-  idPath=~/.ssh/id_$name
+  idPath=~/.ssh/id_$uniqueName
   # generate ssh keys with email and no passphrase in the .ssh files with id_name
-  ssh-keygen -q -t ed25519 -C "$email" -f $idPath -N ""
+  ssh-keygen -q -t $encryption -C "$email" -f $idPath -N ""
   # Add the private key to the ssh agent
   ssh-add $idPath
 
-  echo "Add the below public key to https://github.com/settings/keys - or find it at $idPath.pub "
+  echo "Add the below public key to $repo - or find it at $idPath.pub "
   # Print the public key to the console
   ssh-keygen -y -f $idPath
 
   # Append code to ssh config with newlines between each part.
-  printf "\n%s\n%s\n%s\n%s\n%s\n\n" "# Account for: $name - $email" "Host github-$name" "HostName github.com" "User git" "IdentityFile $idPath" >> ~/.ssh/config
+  printf "\n%s\n%s\n%s\n%s\n%s\n\n" "# Account for: $uniqueName - $email" "Host $uniqueName" "HostName ${repoOptions[$repo]}" "User git" "IdentityFile $idPath" >> ~/.ssh/config
   
+  echo "Clone new repos with: `git clone ${cloneOptions[$repo]}`"
   while true; do
     read -p "Do you want to add another user?" yn
     case $yn in
@@ -118,6 +136,8 @@ add_git_user() {
         [Nn]* ) return 1;;
         * ) echo "Please answer yes or no.";;
     esac
+done
+done
 done
 return 1
 }
@@ -129,9 +149,11 @@ if  [[ ! -f ~/.savedGitUsers ]]; then
 fi
 source ~/.savedGitUsers
 if  [[ -v arr[@] ]]
-echo ${!arr[@]} ${arr[@]}
 then
 global=""
+select user in ${!arr[@]}
+do
+  echo "You have chosen $user"
 while true; do
     read -p "Do you want to set globally?" yn
     case $yn in
@@ -140,11 +162,8 @@ while true; do
         * ) echo "Please answer yes or no.";;
     esac
 done
-select user in ${!arr[@]}
-do
-  echo "You have chosen $user"
-  git config user.name "$user"
-  git config user.email "${arr[$user]}"
+  git config $global user.name "$user"
+  git config $global user.email "${arr[$user]}"
   return 1;
 done
 else
