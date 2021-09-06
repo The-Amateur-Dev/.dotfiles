@@ -1,8 +1,9 @@
-if [ -f ~/.dotfiles/exported ]; then
-    \. ~/.dotfiles/exported
+#!/bin/bash
+if [ -f ~/.dotfiles/.exported ]; then
+    \. ~/.dotfiles/.exported
 fi
-if [ -f ~/.bash_aliases ]; then
-    \. ~/.bash_aliases
+if [ -f ~/.dotfiles/.bash_aliases ]; then
+    \. ~/.dotfiles/.bash_aliases
 fi
 
 if [[ ! -d ~/.ssh ]]; then
@@ -13,18 +14,17 @@ shopt -s extglob
 # rm -rf ~/.ssh/agent.env
 # eval `ssh-agent -s`
 env=~/.ssh/agent.env
-ssh-add ~/.ssh/id_!(*.pub)
-agent_load_env () { test -f "$env" && . "$env" >| /dev/null ; }
-
 agent_start () {
     (umask 077; ssh-agent >| "$env")
     . "$env" >| /dev/null ; }
+ssh-add ~/.ssh/id_!(*.pub)  2>/dev/null
+agent_load_env () { test -f "$env" && . "$env" >| /dev/null ; }
 
+agent_start
 agent_load_env
 
 # agent_run_state: 0=agent running w/ key; 1=agent w/o key; 2= agent not running
 agent_run_state=$(ssh-add -l >| /dev/null 2>&1; echo $?)
-
 if [ ! "$SSH_AUTH_SOCK" ] || [ $agent_run_state = 2 ]; then
     agent_start
     ssh-add
@@ -68,6 +68,9 @@ parse_git_user() {
 parse_git_username() {
     git config --get user.name
 }
+parse_git_repo() {
+    git config --get user.repo
+}
 # parse_git_branch() {
 #   git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
 # }
@@ -86,4 +89,4 @@ USER='\e[0;33m$(parse_git_user)\e[m'
 TIME="\e[0;31m\@\e[m"
 DIR="DIR \e[0;35m(\w)\e[m"
 # Wrap colours in \[ .... \] otherwise terminal counts as chars and creates overlapping issue. 
-PS1='\[\e[0;31m\]\@\[\e[m\] - \[\e[0;33m\]$(parse_git_username) \[\e[0;35m\](\w)\[\e[m\] \[\e[0;32m\]$(__git_ps1 "(%s)")\[\e[m\]'
+PS1='\[\e[0;31m\]\@\[\e[m\] \[\e[0;33m\]$(parse_git_repo)-\[\e[0;33m\]$(parse_git_username) \[\e[0;35m\](\w)\[\e[m\] \[\e[0;32m\]$(__git_ps1 "(%s)")\[\e[m\]$'

@@ -1,14 +1,73 @@
+#!/bin/bash
 source ~/.dotfiles/.gitUserFunctions
+
+##############
+### COLORS ###
+##############
+### Only use colors if connected to a terminal
+    if [ -t 1 ]; then
+        RED=$(printf '\u001b[31m')
+        GREEN=$(printf '\u001b[32m')
+        YELLOW=$(printf '\u001b[33m')
+        BLUE=$(printf '\u001b[34m')
+        MAGENTA=$(printf '\u001b[35m')
+        CYAN=$(printf '\u001b[36m')
+        WHITE=$(printf '\u001b[37m')
+        BOLD=$(printf '\033[1m')
+        RESET=$(printf '\033[m')
+    else
+        RED=""
+        GREEN=""
+        YELLOW=""
+        BLUE=""
+        MAGENTA=""
+        CYAN=""
+        WHITE=""
+        BOLD=""
+        RESET=""
+    fi
+
+command_exists() {
+    command -v "$@" >/dev/null 2>&1
+}
+
+colorText() {
+    printf -- "%s$*%s" >&2 "$1" "$RESET"
+}
+
+error() {
+    printf -- "%sError: $*%s\n" >&2 "$RED" "$RESET"
+}
+
+parse_git_user() {
+    git config --get user.email
+}
+parse_git_username() {
+    git config --get user.name
+}
+parse_git_repo() {
+    git config --get user.repo
+}
+
+### Center print text, "text" "text color" "line color"
+center() {
+  termwidth="$(tput cols)"
+  padding="$(printf '%0.1s' ={1..500})"
+
+  textColor="${2:-$WHITE}"
+  lineColor="${3:-$textColor}"
+  printf '\n%s%*.*s %s%s%s %*.*s\n' "$lineColor" 0 "$(((termwidth-2-${#1})/2))" "$padding" "$textColor" "$1" "$lineColor" 0 "$(((termwidth-1-${#1})/2))" "$padding" "$2"
+}
 
 setup_dotfiles(){
 center "Dotfile: Symlinking settings" "$GREEN"
 # ## Symlink dot files.
 
-FILES=$(ls -A ~/.dotfiles | grep "^\.")
+FILES=$(ls -A ~/.dotfiles | grep "^\." | grep -v ".git")
 for f in $FILES
 do
-  echo "Processing $f file..."
   center "Linking $f" "$GREEN"
+  echo "Processing $f file..."
   ln -sf ~/.dotfiles/$f "$HOME" 
   # take action on each file. $f store current file name
 #   cat "$f"
@@ -25,9 +84,9 @@ done
 #  ln -sf ~/.dotfiles/.gitconfig ~/.gitconfig
 center "Linking VSCode settings.json" "$GREEN"
 mkdir -p $APPDATA/Code
-ln -sf ~/.dotfiles/.vscode/settings.json $APPDATA/Code/User
+ln -sf ~/.dotfiles/vscode/settings.json $APPDATA/Code/User/settings.json
 
-center "Terminal: Symlinking Windows Terminal Settings" "$MAGENTA" "$MAGENTA"
+center "Terminal: Symlinking Windows Terminal Settings" "$GREEN"
 # ## Add a symlink for Windows Terminal settings.
     TermianlFiles=$(ls "$LOCALAPPDATA/Packages" | grep "^Microsoft\.WindowsTerminal")
  if [ -d "$LOCALAPPDATA/Packages" ]; then

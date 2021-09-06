@@ -8,7 +8,7 @@ cleanup_users() {
     return 1;
   fi
   source ~/.savedGitUsers
-  if  [[ -v arr[@] ]]; then
+
   # Creates a regex of list of words (account names) to NOT match, meaning all the accounts no longer in gituser files will match (if automatically added) and then will be removed.
   # ?! - If matches, DO NOT match regex
   # \\b an escaped \b for regex white space / end of word to ensure exact match of account name
@@ -22,15 +22,26 @@ cleanup_users() {
   # List all files in ~/.ssh, then filter to only ones beginnging with id_ then filter to ones NOT inside the savedGitUsers file.
   # echo '^id_(('"${matchedFileNames}"')(.pub)*$)'
   filesToRemove=$(ls ~/.ssh | grep -E '^id_' | grep -v -E '^id_(('"${matchedFileNames}"')(.pub)*$)') 
+  if [ -z "$filesToRemove"];
+  then
+    echo "All SSH files are clean"
+  else
   echo Removing SSH Files: $filesToRemove
-
   # Move to .shh file, remove files, move back to prev dir
   cd ~/.ssh
   rm $filesToRemove
   cd -
-
+  fi
+  # If the array is empty match every account, since theyre not in the list.
+  if  [[ ${arr[@]} -eq 0 ]]; then
+  match=".*"
+  else
+  # Join each name match with regex for its exact match.
   printf -v joined '(?!.*\\b%s\\b)' "${!arr[@]}"
+  echo "$joined test"
   match=${joined%}
+  echo "Removing '"$match"' from config file"
+  fi
   # .* matches all characters after the account name match,
   # [^#] do not match # means the regex stops matching on the next '# Account for' because # is excluded. (Can be 0 or 1 really because end of file)
   configRegex='(# Account for:'"${match}"' .*[^#]*)'
@@ -46,7 +57,6 @@ perl -pi.back -0pe 's/'"${configRegex}"'/\n/mg' ~/.ssh/config
 # Have a delete user function that uses select to choose user to delete, or multiple which removes from gitusers files and then calls this after all removed to reduce loops.
 
 # Need to also delete ssh files
-  fi
 }
 
 delete_git_user() {
@@ -102,11 +112,12 @@ do
   echo "Choose the Repository site"
 select repo in ${!repoOptions[@]}
 do
-  read -p "Enter the git user NAME: " name
+  read -p "Enter the git author NAME: " name
   read -p "Enter the git user EMAIL: " email
   # Add new user to the array then save it back to savedGitUsers
+  
   uniqueName="$repo-$name"
-  arr[$uniqueName]=$email
+  arr[$uniqueName]="$name $repo $email"
   declare -p arr > ~/.savedGitUsers
   declare -A cloneOptions
   cloneOptions[github]="git@$uniqueName:githubUserNameHere/project"
@@ -128,7 +139,7 @@ do
   # Append code to ssh config with newlines between each part.
   printf "\n%s\n%s\n%s\n%s\n%s\n\n" "# Account for: $uniqueName - $email" "Host $uniqueName" "HostName ${repoOptions[$repo]}" "User git" "IdentityFile $idPath" >> ~/.ssh/config
   
-  echo "Clone new repos with: `git clone ${cloneOptions[$repo]}`"
+  echo "Clone new repos with: git clone ${cloneOptions[$repo]}"
   while true; do
     read -p "Do you want to add another user?" yn
     case $yn in
@@ -139,6 +150,7 @@ do
 done
 done
 done
+echo "use setgituser to activate the new user."
 return 1
 }
 
@@ -155,15 +167,32 @@ select user in ${!arr[@]}
 do
   echo "You have chosen $user"
 while true; do
-    read -p "Do you want to set globally?" yn
+    read -p "Do you want to set globally? [y/n]" yn
     case $yn in
-        [Yy]* ) global="--global"; break;;
+        [Yy]* ) $global="--global"; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
 done
-  git config $global user.name "$user"
-  git config $global user.email "${arr[$user]}"
+echo 1
+# Name Repo Email
+declare -a userInfo=(${arr[$user]})
+name=${userInfo[0]}
+repo=${userInfo[1]}
+email=${userInfo[2]}
+echo 2
+echo "name $name repo $repo email $email $userInfo"
+echo $global
+#TODO: Use variable injection to do --global rather than if
+if [ "$global" = "--global" ]; then
+  git config --global user.name "$name"
+  git config --global user.email "$email"
+  git config --global user.repo "$repo"
+else
+  git config user.name "$name"
+  git config user.email "$email"
+  git config user.repo "$repo"
+fi
   return 1;
 done
 else
@@ -172,7 +201,7 @@ fi
 }
 
 init_git_users() {
-echo "initialising git users"
+echo "Initialising git users"
 mkdir -p ~/.ssh
 
 declare -A arr

@@ -1,22 +1,27 @@
-FILES=$(ls -A ~/.dotfiles | grep "^\.")
-for f in $FILES
-do
-  echo "Processing $f file..."
-  echo $(PWD)
-  # take action on each file. $f store current file name
-#   cat "$f"
-  declare -A repoOptions
-  repoOptions[github]="github.com"
-  repoOptions[gitlab]="gitlab.com"
-  repoOptions[azure]="ssh.dev.azure.com"
-  encryptionOptions=(rsa dsa ecdsa ed25519)
+#!/bin/bash
+
+# FILES=$(ls -A ~/.dotfiles | grep "^\.")
+# for f in $FILES
+# do
+#   echo "Processing $f file..."
+#   echo $(PWD)
+#   # take action on each file. $f store current file name
+# #   cat "$f"
+# done
+  # Author Repo Email
+  declare -A users
+  users[azure-aaron]="Aaron Azure Apowell829@gmail.com"
 
   # echo "Choose the SSH Encryption type:"
 
   # select encryption in ${encryptionOptions[@]}
 
-  echo ${repoOptions[*]}
-  select encryption in ${encryptionOptions[@]}
-do
-echo $encryption
-done
+  # echo ${users[*]}
+  # echo ${!users[*]}
+  # echo ${!users[@]}
+  declare -a test=(${users[@]})
+echo ${test[1]}
+#   select encryption in ${encryptionOptions[@]}
+# do
+# echo $encryption
+# done

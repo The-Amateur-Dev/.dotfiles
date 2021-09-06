@@ -1,51 +1,7 @@
 #!/bin/bash
-##### BEFORE HOLIDAY - Testing pinning apps to taskbar, mainly windows terminal issue, check the if statements, check if can fix the version
 
 source ~/.dotfiles/.exported
 
-##############
-### COLORS ###
-##############
-### Only use colors if connected to a terminal
-    if [ -t 1 ]; then
-        RED=$(printf '\u001b[31m')
-        GREEN=$(printf '\u001b[32m')
-        YELLOW=$(printf '\u001b[33m')
-        BLUE=$(printf '\u001b[34m')
-        MAGENTA=$(printf '\u001b[35m')
-        CYAN=$(printf '\u001b[36m')
-        WHITE=$(printf '\u001b[37m')
-        BOLD=$(printf '\033[1m')
-        RESET=$(printf '\033[m')
-    else
-        RED=""
-        GREEN=""
-        YELLOW=""
-        BLUE=""
-        MAGENTA=""
-        CYAN=""
-        WHITE=""
-        BOLD=""
-        RESET=""
-    fi
-
-command_exists() {
-    command -v "$@" >/dev/null 2>&1
-}
-
-error() {
-    printf -- "%sError: $*%s\n" >&2 "$RED" "$RESET"
-}
-
-### Center print text, "text" "text color" "line color"
-center() {
-  termwidth="$(tput cols)"
-  padding="$(printf '%0.1s' ={1..500})"
-
-  textColor="${2:-$WHITE}"
-  lineColor="${3:-$textColor}"
-  printf '\n%s%*.*s %s%s%s %*.*s\n' "$lineColor" 0 "$(((termwidth-2-${#1})/2))" "$padding" "$textColor" "$1" "$lineColor" 0 "$(((termwidth-1-${#1})/2))" "$padding" "$2"
-}
 
 check_directory() {
 center "User: $(whoami)  |  Directory: $(pwd)" "$YELLOW" "$RED"

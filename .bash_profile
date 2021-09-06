@@ -1,4 +1,4 @@
-echo "bash profile called"
+#!/bin/bash
 if [ -f ~/.bashrc ]; then
 	. ~/.bashrc
 fi
