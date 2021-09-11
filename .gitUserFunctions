@@ -22,7 +22,7 @@ cleanup_users() {
   # List all files in ~/.ssh, then filter to only ones beginnging with id_ then filter to ones NOT inside the savedGitUsers file.
   # echo '^id_(('"${matchedFileNames}"')(.pub)*$)'
   filesToRemove=$(ls ~/.ssh | grep -E '^id_' | grep -v -E '^id_(('"${matchedFileNames}"')(.pub)*$)') 
-  if [ -z "$filesToRemove"];
+  if [ -z "$filesToRemove" ];
   then
     echo "All SSH files are clean"
   else
@@ -33,15 +33,16 @@ cleanup_users() {
   cd -
   fi
   # If the array is empty match every account, since theyre not in the list.
-  if  [[ ${arr[@]} -eq 0 ]]; then
+  if [ "${arr[*]}" = "" ]; then
   match=".*"
   else
   # Join each name match with regex for its exact match.
   printf -v joined '(?!.*\\b%s\\b)' "${!arr[@]}"
-  echo "$joined test"
+  echo "$joined"
   match=${joined%}
   echo "Removing '"$match"' from config file"
   fi
+  echo "Cleaning up ssh config"
   # .* matches all characters after the account name match,
   # [^#] do not match # means the regex stops matching on the next '# Account for' because # is excluded. (Can be 0 or 1 really because end of file)
   configRegex='(# Account for:'"${match}"' .*[^#]*)'
@@ -59,6 +60,39 @@ perl -pi.back -0pe 's/'"${configRegex}"'/\n/mg' ~/.ssh/config
 # Need to also delete ssh files
 }
 
+delete_git_host() {
+    if  [[ ! -f ~/.savedGitHosts ]]; then
+    echo "No saved git hosts; Exiting..."
+    return 1;
+  fi
+  source ~/.savedGitHosts
+if  [[ -v hostOptions[@] ]]
+then
+select host in ${!hostOptions[@]}
+do
+  if [ $host = "new" ]; then
+  echo "Cannot delete the Create New HOST"
+  break;
+  fi
+  echo "Removed: $host"
+  unset hostOptions[$host]
+  declare -p hostOptions > ~/.savedGitHosts
+  break;
+done
+echo "Make sure to delete users related to $host"
+while true; do
+    read -p "Do you want to DELETE another host? [Yn]" yn
+    case $yn in
+        [Nn]* ) break;;
+        * ) delete_git_host; break;;
+    esac
+done
+else
+  echo "No saved git hosts to choose from"
+fi
+
+}
+
 delete_git_user() {
     if  [[ ! -f ~/.savedGitUsers ]]; then
     echo "No saved git users; Use setgituser to add some. Exiting..."
@@ -67,6 +101,7 @@ delete_git_user() {
   source ~/.savedGitUsers
 if  [[ -v arr[@] ]]
 then
+echo "Choose a user to delete: "
 select user in ${!arr[@]}
 do
   echo "Removed: $user"
@@ -74,7 +109,7 @@ do
   declare -p arr > ~/.savedGitUsers
   break;
 done
-while true; do
+while [[ -v arr[@] ]]; do
     read -p "Do you want to DELETE another user? [Yn]" yn
     case $yn in
         [Nn]* ) break;;
@@ -88,75 +123,166 @@ fi
 cleanup_users
 }
 
-## TODO: Make version control agnostic, gitlab azure github etc
+check_unique_username() {
+    if  [[ -f ~/.savedGitUsers ]]; then
+    source ~/.savedGitUsers
+  fi
+  # echo "unique called with $1"
+  echo "${arr[$1]+_}"
+  echo "${arr[$1]}"
+    if [ ${arr[$1]+_} ]; then
+  while true; do
+    read -p "$1 already exists, do you want to choose a different name or delete the current saved user: (rename or delete) " yn
+    case $yn in
+        rena* ) read -p "Enter a unique a name (This is not git author): " uniqueUserName; check_unique_username $uniqueUserName; break;;
+        del* ) delete_git_user; check_unique_username $1; break;;
+        * ) echo "Please type rename or delete";;
+    esac
+  done
+fi
+}
+
+add_git_host() {
+    if  [[ -f ~/.savedGitHosts ]]; then
+    source ~/.savedGitHosts
+  fi
+  if [[ -v hostOptions[@] ]]; then
+  echo ""
+  else
+  declare -A hostOptions
+  fi
+  if [ ${hostOptions[new]+_} ]; then
+  echo ""
+  else
+  hostOptions[new]="Create New"
+  fi
+  read -p "Enter a new custom repo host: (gitlab.com, ssh.dev.azure.com:v3 etc) " newRepoHost
+  read -p "Enter an alias for $newRepoHost: " newRepoHostAlias
+  hostOptions[$newRepoHostAlias]=$newRepoHost
+  declare -p hostOptions > ~/.savedGitHosts
+
+}
+
+## TODO: Handle ports anything after : save to port in config
 add_git_user() {
   if  [[ -f ~/.savedGitUsers ]]; then
     source ~/.savedGitUsers
   fi
+  if  [[ -f ~/.savedGitHosts ]]; then
+    source ~/.savedGitHosts
+  fi
   if [[ -v arr[@] ]]; then
-  echo "Add another git user:"
+  colorText "$YELLOW" "Add another git user:"
   else
   declare -A arr
-  echo "Add a git user:"
+  colorText "$YELLOW" "Add a git user:"
   fi
-  declare -A repoOptions
-  repoOptions[github]="github.com"
-  repoOptions[gitlab]="gitlab.com"
-  repoOptions[azure]="ssh.dev.azure.com"
-
-
   encryptionOptions=(rsa dsa ecdsa ed25519)
-  echo "Choose the SSH Encryption type:"
+  colorText "$BLUE" "Choose the SSH Encryption type:"
   select encryption in ${encryptionOptions[@]}
 do
-  echo "Choose the Repository site"
-select repo in ${!repoOptions[@]}
+  colorText "$YELLOW" "Chose $encryption"
+  if [ ${hostOptions[new]+_} ]; then
+  echo ""
+  else
+  hostOptions[new]="Create New"
+  fi
+  colorText "$BLUE"  "Choose the Repository site (Host: gitlab.com, ssh.dev.azure.com:v3 etc)"
+select repo in ${!hostOptions[@]}
 do
+colorText "$YELLOW" "Chose $repo | ${hostOptions[$repo]} "
+if [ $repo == "new" ]; then
+  add_git_host
+  repo=$newRepoHostAlias
+fi
+  read -p "Enter a unique a name (AKA Host for SSH config) (This is not git author): " uniqueUserName
+  uniqueName="$repo-$name"
+
+  echo "unique username $uniqueUserName"
+  check_unique_username $uniqueUserName
+  echo "past check username"
   read -p "Enter the git author NAME: " name
   read -p "Enter the git user EMAIL: " email
   # Add new user to the array then save it back to savedGitUsers
   
-  uniqueName="$repo-$name"
-  arr[$uniqueName]="$name $repo $email"
+  arr[$uniqueUserName]="$name $repo $email"
   declare -p arr > ~/.savedGitUsers
   declare -A cloneOptions
-  cloneOptions[github]="git@$uniqueName:githubUserNameHere/project"
+  cloneOptions[github]="git@$uniqueUserName:githubUserNameHere/project"
   cloneOptions[gitlab]="gitlab.com"
-  cloneOptions[azure]="git@$uniqueName:v3/project"
+  cloneOptions[azure]="git@$uniqueUserName:v3/project"
 
-  echo "Generating ssh keys for $uniqueName"
+  colorText "$YELLOW" "Generating ssh keys for $uniqueUserName"
   eval `ssh-agent -s`
-  idPath=~/.ssh/id_$uniqueName
-  # generate ssh keys with email and no passphrase in the .ssh files with id_name
+  idPath=~/.ssh/id_$uniqueUserName
+  if [[ -f ~/.ssh/id_$uniqueUserName ]]; then
+  while true; do
+    read -p "A SSH Key for $uniqueUserName already exists. Do you wish to overwrite? [y/n/showkey]" overwrite
+    case $overwrite in
+        [Yy]* ) ssh-keygen -q -t $encryption -C "$email" -f $idPath -N '' <<< $'\ny' >/dev/null 2>&1; ssh-add $idPath; break;;
+        [Nn]* ) break;;
+        [Ss]* ) echo "The current PublicKey for $uniqueUserName is below"; ssh-keygen -y -f $idPath;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+  else
   ssh-keygen -q -t $encryption -C "$email" -f $idPath -N ""
-  # Add the private key to the ssh agent
   ssh-add $idPath
+fi
+  # generate ssh keys with email and no passphrase in the .ssh files with id_name
+  # ssh-keygen -q -t $encryption -C "$email" -f $idPath -N ""
+  # Add the private key to the ssh agent
+  # ssh-add $idPath
 
-  echo "Add the below public key to $repo - or find it at $idPath.pub "
+  colorText "$MAGENTA" "Add the below public key to $repo - or find it at $idPath.pub "
   # Print the public key to the console
   ssh-keygen -y -f $idPath
 
+  echo "${hostOptions[$repo]}"
+  echo "end of echos"
+  # echo "${!hostOptions[$repo]}"
+  # echo "${!hostOptions[$repo]+_}"
+  # echo "${hostOptions[$repo]+_}"
   # Append code to ssh config with newlines between each part.
-  printf "\n%s\n%s\n%s\n%s\n%s\n\n" "# Account for: $uniqueName - $email" "Host $uniqueName" "HostName ${repoOptions[$repo]}" "User git" "IdentityFile $idPath" >> ~/.ssh/config
+  printf "\n%s\n%s\n%s\n%s\n%s\n\n" "# Account for: $uniqueUserName - $email" "Host $uniqueUserName" "HostName ${hostOptions[$repo]}" "User git" "IdentityFile $idPath" >> ~/.ssh/config
   
-  echo "Clone new repos with: git clone ${cloneOptions[$repo]}"
+  colorText "$MAGENTA" "Change git user with gitsetuser."
+  colorText "$MAGENTA" "Clone new repos by replacing ${hostOptions[$repo]} with $uniqueUserName"
   while true; do
-    read -p "Do you want to add another user?" yn
+    read -p "Do you want to add another user? [y/n]" yn
     case $yn in
-        [Yy]* ) add_git_user; break;;
+        [Yy]* ) add_git_user; return 1;;
         [Nn]* ) return 1;;
         * ) echo "Please answer yes or no.";;
     esac
 done
 done
 done
-echo "use setgituser to activate the new user."
+echo "use gitsetuser to activate the new user."
 return 1
+}
+
+list_git_users() {
+  if  [[ ! -f ~/.savedGitUsers ]]; then
+    echo "No saved git users; Use gitadduser to add some. Exiting..."
+    return 1
+fi
+source ~/.savedGitUsers
+echo "Saved users: ${!arr[@]}"
+}
+
+list_git_hosts() {
+  if  [[ ! -f ~/.savedGitHosts ]]; then
+    echo "No saved git Hosts; Use gitaddhost to add some. Exiting..."
+    return 1
+fi
+source ~/.savedGitHosts
+echo "Saved Hosts: ${!hostOptions[@]}"
 }
 
 select_git_user() {
 if  [[ ! -f ~/.savedGitUsers ]]; then
-    echo "No saved git users; Use setgituser to add some. Exiting..."
+    echo "No saved git users; Use gitadduser to add some. Exiting..."
     return 1
 fi
 source ~/.savedGitUsers
@@ -169,29 +295,28 @@ do
 while true; do
     read -p "Do you want to set globally? [y/n]" yn
     case $yn in
-        [Yy]* ) $global="--global"; break;;
+        [Yy]* ) global="--global"; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
 done
-echo 1
 # Name Repo Email
 declare -a userInfo=(${arr[$user]})
 name=${userInfo[0]}
 repo=${userInfo[1]}
 email=${userInfo[2]}
-echo 2
-echo "name $name repo $repo email $email $userInfo"
-echo $global
+
 #TODO: Use variable injection to do --global rather than if
 if [ "$global" = "--global" ]; then
   git config --global user.name "$name"
   git config --global user.email "$email"
   git config --global user.repo "$repo"
+  git config --global user.uniqueHostName "$user"
 else
   git config user.name "$name"
   git config user.email "$email"
   git config user.repo "$repo"
+  git config user.uniqueHostName "$user"
 fi
   return 1;
 done

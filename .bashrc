@@ -62,15 +62,6 @@ cd () {
 ################
 ## Set Terminal Prompt
 ################
-parse_git_user() {
-    git config --get user.email
-}
-parse_git_username() {
-    git config --get user.name
-}
-parse_git_repo() {
-    git config --get user.repo
-}
 # parse_git_branch() {
 #   git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
 # }
@@ -89,4 +80,4 @@ USER='\e[0;33m$(parse_git_user)\e[m'
 TIME="\e[0;31m\@\e[m"
 DIR="DIR \e[0;35m(\w)\e[m"
 # Wrap colours in \[ .... \] otherwise terminal counts as chars and creates overlapping issue. 
-PS1='\[\e[0;31m\]\@\[\e[m\] \[\e[0;33m\]$(parse_git_repo)-\[\e[0;33m\]$(parse_git_username) \[\e[0;35m\](\w)\[\e[m\] \[\e[0;32m\]$(__git_ps1 "(%s)")\[\e[m\]$'
+PS1='\[\e[0;31m\]\@\[\e[m\] \[\e[0;33m\]$(parse_git_host) \[\e[0;35m\](\w)\[\e[m\] \[\e[0;32m\]$(__git_ps1 "(%s)")\[\e[m\]$'

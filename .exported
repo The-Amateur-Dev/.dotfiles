@@ -32,7 +32,7 @@ command_exists() {
 }
 
 colorText() {
-    printf -- "%s$*%s" >&2 "$1" "$RESET"
+    printf -- "%s$2%s\n" >&2 "$1" "$RESET"
 }
 
 error() {
@@ -47,6 +47,13 @@ parse_git_username() {
 }
 parse_git_repo() {
     git config --get user.repo
+}
+parse_git_host() {
+    git config --get user.uniqueHostName
+}
+
+get_public_key() {
+    ssh-keygen -y -f ~/.ssh/id_$(parse_git_host)
 }
 
 ### Center print text, "text" "text color" "line color"
@@ -98,4 +105,94 @@ do
 done
 fi
 
+}
+
+check_running_admin() {
+        powershell.exe -noprofile -executionpolicy bypass -file ~/.dotfiles/admincheck.ps1
+}
+
+default_windows_settings() {
+    center "Editing windows settings" "$YELLOW"
+        powershell.exe -noprofile -executionpolicy bypass -file ~/.dotfiles/windows.ps1
+}
+
+download_chocolatey() {
+center "Running Chocolatey Install" "$BLUE" "$BLUE"
+# ### Chocolatey install
+ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))" && SET PATH=%PATH%;%ALLUSERSPROFILE%/chocolatey/bin
+ powershell.exe -noprofile -executionpolicy bypass -file ~/.dotfiles/restart.ps1
+}
+
+
+
+download_fonts() {
+center "Downloading fonts" "$WHITE" "$YELLOW"
+
+center "Installing Fira-Code font" "$GREEN" "$GREEN"
+    choco install firacode -y
+
+center "Installing Cascadia-Code font" "$GREEN" "$GREEN"
+# ## Add cascadiacode font for windows terminal
+    choco install cascadiacode -y
+}
+
+download_packages() {
+center "Downloading Applications" "$CYAN"
+### Install all the packages
+if [ ! -f "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" ]; then
+ center "App: Installing Chrome" "$CYAN"
+ choco install googlechrome -y
+fi
+if [ ! -f "C:\Program Files\Mozilla Firefox\firefox.exe" ]; then
+ center "App: Installing Firefox" "$CYAN"
+ choco install firefox -y
+fi
+if [ ! -f "$LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe" ]; then
+ center "App: Installing VSCode" "$CYAN"
+ choco install vscode -y
+fi
+if [ ! -f "$LOCALAPPDATA\Postman\Postman.exe" ]; then
+ center "App: Installing Postman" "$CYAN"
+ choco install postman -y
+fi
+if [ ! -f "$APPDATA\Spotify\Spotify.exe" ]; then
+ center "App: Installing Spotify" "$CYAN"
+ choco install spotify -y
+fi
+### choco install <package_name> repeats for all the packages you want to install
+}
+
+
+### shellcheck source=/dev/null
+setup_devtools() {
+    center "Setting up development tools" "$YELLOW"
+
+    command_exists git || {
+        error "git is not installed"
+        exit 1
+    }
+    command_exists nvm || {
+     center "Dev Tool: Installing Node Version Manager" "$YELLOW"
+     choco install nvm -y
+    }
+    command_exists node || {
+    center "Dev Tool: Installing Node.js" "$YELLOW"
+     choco install nodejs-lts -y
+    }
+    command_exists py || {
+    center "Dev Tool: Installing Python" "$YELLOW"
+     choco install python -y
+    }
+    command_exists yarn || {
+    center "Dev Tool: Installing Yarn" "$YELLOW"
+     choco install yarn -y
+    }
+    command_exists gh || {
+    center "Dev Tool: Installing Github CLI" "$YELLOW"
+     choco install gh -y
+    }
+    center "Dev Tool: Installing Java JDK 11" "$YELLOW"
+     choco install corretto11jdk -y
+    center "Dev Tool: Installing VMWare" "$YELLOW"
+     choco install vmwareworkstation -y
 }

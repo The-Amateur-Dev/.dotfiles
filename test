@@ -10,8 +10,11 @@
 # done
   # Author Repo Email
   declare -A users
-  users[azure-aaron]="Aaron Azure Apowell829@gmail.com"
-
+  users[aaaaaaa]="aaaaa Aaron Azure Apowell829@gmail.com"
+ declare -p users > ~/.savedGitUsers
+  declare -A bbbb
+  users[bbbbb]="bbbb"
+ declare -p bbbb > ~/.savedGitUsers
   # echo "Choose the SSH Encryption type:"
 
   # select encryption in ${encryptionOptions[@]}
@@ -19,8 +22,8 @@
   # echo ${users[*]}
   # echo ${!users[*]}
   # echo ${!users[@]}
-  declare -a test=(${users[@]})
-echo ${test[1]}
+#   declare -a test=(${users[@]})
+# echo ${test[1]}
 #   select encryption in ${encryptionOptions[@]}
 # do
 # echo $encryption
